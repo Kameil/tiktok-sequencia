@@ -1,4 +1,4 @@
 # tiktok-sequencia
 tiktok sequencia/foguinho automatico para windows
 
-# funcionando 24/09/2024
+# funcionando 23/11/2024
