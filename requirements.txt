@@ -1,5 +1,4 @@
 Selenium
 pickle
 keyboard
-pyautogui
 winotify
