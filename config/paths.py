@@ -1,14 +1,14 @@
-import os
-import platform
+"""
+Chrome executable paths by operating system
+"""
 
-def get_chrome_paths():
-    """Returns Chrome's path dictionary by operating system"""
-    
-    system = platform.system()
-    
-    # Linux
-    linux_paths = {
-        # Chrome/Chromium oficial
+import os
+from platform import system
+
+def get_linux_paths():
+    """Return Linux Chrome paths"""
+    return {
+        # Official Chrome/Chromium
         "standard": "/sbin/google-chrome-stable",
         "alternative1": "/usr/bin/google-chrome-stable",
         "alternative2": "/usr/bin/google-chrome",
@@ -41,7 +41,7 @@ def get_chrome_paths():
         "nixos_chromium": "/run/current-system/sw/bin/chromium",
         "nix_user_chrome": os.path.expanduser("~/.nix-profile/bin/google-chrome-stable"),
         
-        # Arch Linux (AUR)
+        # Arch Linux
         "arch_chrome": "/usr/bin/google-chrome",
         "arch_chromium": "/usr/bin/chromium",
         
@@ -62,27 +62,38 @@ def get_chrome_paths():
         "home_local_chrome": os.path.expanduser("~/.local/bin/google-chrome"),
         "home_local_chromium": os.path.expanduser("~/.local/bin/chromium"),
     }
-    
-    # Windows
-    windows_paths = {
+
+def get_windows_paths():
+    """Return Windows Chrome paths"""
+    return {
         "windows_chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
         "windows_chrome_x86": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
         "windows_chromium": "C:\\Program Files\\Chromium\\Application\\chrome.exe",
         "windows_local": os.path.expanduser("~\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe"),
         "windows_local_chromium": os.path.expanduser("~\\AppData\\Local\\Chromium\\Application\\chrome.exe"),
     }
-    
-    # macOS
-    mac_paths = {
+
+def get_macos_paths():
+    """Return macOS Chrome paths"""
+    return {
         "mac_chrome": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         "mac_chromium": "/Applications/Chromium.app/Contents/MacOS/Chromium",
     }
+
+def get_paths_by_os():
+    """
+    Get Chrome paths based on current operating system
     
-    if system == "Linux":
-        return linux_paths
-    elif system == "Windows":
-        return windows_paths
-    elif system == "Darwin":  # macOS
-        return mac_paths
-    else:
-        return {}
+    Returns:
+        dict: Dictionary of Chrome paths for current OS
+    """
+    system_name = system()
+    
+    paths_map = {
+        "Linux": get_linux_paths,
+        "Windows": get_windows_paths,
+        "Darwin": get_macos_paths
+    }
+    
+    paths_function = paths_map.get(system_name, lambda: {})
+    return paths_function()
