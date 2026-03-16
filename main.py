@@ -1,30 +1,77 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+import os
 import time
 import pickle
-import keyboard
-from selenium.webdriver.chrome.options import Options
-import os
 import random
-
-
 from datetime import datetime
+from platform import system
 
-hoje = datetime.now()
-# verificar se ja enviou hojezzzzz
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+import keyboard
+
+from paths import get_chrome_paths
+
+osn = system()
+today = datetime.now()
 with open("hoje.txt", "r", encoding="utf-8") as file:
-    if file.read() == str(hoje.day):
+    if file.read() == str(today.day):
         print("ja foi hoje")
         time.sleep(5)
         exit()
 
 option = Options()
+chrome_paths = get_chrome_paths()
 
-option.add_argument("--disable-infobars")
-option.add_argument("start-maximized")
-option.add_argument("--disable-extensions")
+chrome_path = None
+for name, path in chrome_paths.items():
+    if os.path.exists(path):
+        chrome_path = path
+        print(f"Chrome found: {name} -> {path}")
+        break
 
-# Pass the argument 1 to allow and 2 to block
+if not chrome_path:
+    print("Error: No Chrome installation found!")
+    exit(1)
+
+option.binary_location = chrome_path
+
+if osn == "Linux":
+    print("Linux detected: Adding Linux-specific flags")
+    option.add_argument("--disable-dev-shm-usage")
+    option.add_argument("--disable-gpu")
+    option.add_argument("--use-gl=swiftshader")
+    option.add_argument("--disable-setuid-sandbox")
+    option.add_argument("--ozone-platform=x11")
+    option.add_argument("--no-sandbox")
+    option.add_argument("--disable-infobars")
+    option.add_argument("--start-maximized")
+    option.add_argument("--disable-extensions")
+    
+elif osn == "Windows":
+    print("Windows detected: Adding Windows-specific flags")
+    option.add_argument("--no-sandbox")
+    option.add_argument("--disable-infobars")
+    option.add_argument("--start-maximized")
+    option.add_argument("--disable-extensions")
+    option.add_argument("--disable-gpu")
+    option.add_argument("--disable-dev-shm-usage")
+    
+elif osn == "Darwin":
+    print("macOS detected: Adding macOS-specific flags")
+    option.add_argument("--no-sandbox")
+    option.add_argument("--disable-infobars")
+    option.add_argument("--start-maximized")
+    option.add_argument("--disable-extensions")
+    option.add_argument("--disable-gpu")
+    
+else:
+    print(f"Unknown OS: {osn}. Using default flags")
+    option.add_argument("--no-sandbox")
+    option.add_argument("--disable-infobars")
+    option.add_argument("--start-maximized")
+    option.add_argument("--disable-extensions")
+
 option.add_experimental_option(
     "prefs", {"profile.default_content_setting_values.notifications": 1}
 )
