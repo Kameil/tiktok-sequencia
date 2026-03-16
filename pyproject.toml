@@ -1,0 +1,11 @@
+[project]
+name = "tiktok-sequencia"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "keyboard>=0.13.5",
+    "selenium>=4.41.0",
+    "winotify>=1.1.0",
+]
