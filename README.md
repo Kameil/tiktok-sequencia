@@ -1,3 +1,5 @@
+# TikTok Sequência (TTKS)
+
 Automatic flame (foguinho) streak tool for TikTok using Python and Google Chrome. Keeps your conversation flames active by sending messages periodically!
 
 ## Installation
