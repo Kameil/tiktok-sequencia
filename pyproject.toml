@@ -5,7 +5,7 @@ description = "A script that lets you set the TikTok's chat fire ON using Python
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "cloakbrowser>=0.3.18",
     "notify-py>=0.3.43",
     "pynput>=1.8.1",
-    "selenium>=4.41.0",
 ]
