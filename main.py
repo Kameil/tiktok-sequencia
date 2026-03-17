@@ -1,16 +1,22 @@
-import os
 import time
 import pickle
 import random
+import threading
 from datetime import datetime
+from pathlib import Path
 from notifypy import Notify
 from pynput import keyboard as pynput_keyboard
 from cloakbrowser import launch
 
+# Base dir always relative
+BASE_DIR = Path(__file__).parent
+T_FILE = BASE_DIR / "t.txt"
+COOKIES_FILE = BASE_DIR / "cookies.pkl"
+
 # Verify if it is already sent
 today = datetime.now()
-with open("t.txt", "r", encoding="utf-8") as file:
-    if file.read() == str(today.day):
+if T_FILE.exists():
+    if T_FILE.read_text(encoding="utf-8") == str(today.day):
         print("Already sent today.")
         time.sleep(5)
         exit()
@@ -22,15 +28,13 @@ page = context.new_page()
 page.goto("https://tiktok.com/")
 
 # Save cookies if not found
-if not os.path.exists("cookies.pkl"):
+if not COOKIES_FILE.exists():
     print("No account found. Please log in and press Ctrl+S to save your cookies.")
 
     ntf = Notify()
     ntf.title = "Login with your account"
     ntf.message = "No account found. Please log in and save your cookies."
     ntf.send()
-
-    import threading
 
     pressed_keys = set()
     save_event = threading.Event()
@@ -52,9 +56,8 @@ if not os.path.exists("cookies.pkl"):
     with pynput_keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
         while not stop_event.is_set():
             if save_event.is_set():
-                # context.cookies() called in the main thread 
                 cookies = context.cookies()
-                pickle.dump(cookies, open("cookies.pkl", "wb"))
+                pickle.dump(cookies, open(COOKIES_FILE, "wb"))
                 print("Cookies saved.")
                 ntf2 = Notify()
                 ntf2.title = "Cookies saved"
@@ -70,7 +73,7 @@ if not os.path.exists("cookies.pkl"):
     exit()
 
 # Load cookies and access messages
-cookies = pickle.load(open("cookies.pkl", "rb"))
+cookies = pickle.load(open(COOKIES_FILE, "rb"))
 context.add_cookies(cookies)
 
 page.reload()
@@ -109,8 +112,7 @@ for i in range(total):
         continue
 
 # Register and close
-with open("t.txt", "w", encoding="utf-8") as file:
-    file.write(str(today.day))
+T_FILE.write_text(str(today.day), encoding="utf-8")
 
 print("All messages sent.")
 browser.close()
