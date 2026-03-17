@@ -30,31 +30,40 @@ if not os.path.exists("cookies.pkl"):
     ntf.message = "No account found. Please log in and save your cookies."
     ntf.send()
 
-    pressed_keys = set()
+    import threading
 
-    def save_cookies():
-        cookies = context.cookies()
-        pickle.dump(cookies, open("cookies.pkl", "wb"))
-        print("Cookies saved.")
-        ntf = Notify()
-        ntf.title = "Cookies saved"
-        ntf.message = "Cookies saved successfully!"
-        ntf.send()
+    pressed_keys = set()
+    save_event = threading.Event()
+    stop_event = threading.Event()
 
     def on_press(key):
         pressed_keys.add(key)
         ctrl_held = {pynput_keyboard.Key.ctrl_l, pynput_keyboard.Key.ctrl_r} & pressed_keys
         if key == pynput_keyboard.KeyCode.from_char('s') and ctrl_held:
-            save_cookies()
+            save_event.set()
 
     def on_release(key):
         pressed_keys.discard(key)
         if key == pynput_keyboard.Key.esc:
+            stop_event.set()
             return False
 
     print("Press Esc to exit or Ctrl+S to save cookies.")
     with pynput_keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-        listener.join()
+        while not stop_event.is_set():
+            if save_event.is_set():
+                # context.cookies() called in the main thread 
+                cookies = context.cookies()
+                pickle.dump(cookies, open("cookies.pkl", "wb"))
+                print("Cookies saved.")
+                ntf2 = Notify()
+                ntf2.title = "Cookies saved"
+                ntf2.message = "Cookies saved successfully!"
+                ntf2.send()
+                save_event.clear()
+                stop_event.set()
+            time.sleep(0.1)
+        listener.stop()
 
     browser.close()
     time.sleep(1)
