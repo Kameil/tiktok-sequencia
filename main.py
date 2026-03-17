@@ -52,68 +52,70 @@ browser.get("https://tiktok.com/")
 
 if not os.path.exists("cookies.pkl"):
     print("No account found. Please log in and press Ctrl+S to save your cookies.")
+
     ntf = Notify()
     ntf.title = "Login with your account"
     ntf.message = "It Was not possible to find any account. Please log in and save your cookies."
     ntf.send()
-    time.sleep(1)
+
+    pressed_keys = set()
 
     def save_cookies():
         pickle.dump(browser.get_cookies(), open("cookies.pkl", "wb"))
-        print("Saved cookies.")
+        print("Cookies saved.")
         ntf = Notify()
         ntf.title = "Cookies saved"
-        ntf.message = "Please make sure you are logged in."
+        ntf.message = "Cookies saved successfully!"
         ntf.send()
 
     def on_press(key):
+        pressed_keys.add(key)
+        ctrl_held = {keyboard.Key.ctrl_l, keyboard.Key.ctrl_r} & pressed_keys
+        if key == keyboard.KeyCode.from_char('s') and ctrl_held:
+            save_cookies()
+
+    def on_release(key):
+        pressed_keys.discard(key)
         if key == keyboard.Key.esc:
             return False
 
-        if key == keyboard.KeyCode.from_char('s') and any(
-                modifier in [keyboard.Key.ctrl_l, keyboard.Key.ctrl_r]
-                for modifier in [keyboard.Key.ctrl_l, keyboard.Key.ctrl_r]):
-            save_cookies()
-
-    print("Press Esc to exit or Ctrl+S to save again.")
-
-    with keyboard.Listener(on_press=on_press) as listener:
+    print("Press Esc to exit or Ctrl+S to save cookies.")
+    with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
         listener.join()
 
     browser.quit()
     time.sleep(1)
     exit()
 
-# JA ENTRADO
+# --- Carregar cookies e acessar TikTok ---
 cookies = pickle.load(open("cookies.pkl", "rb"))
 for cookie in cookies:
     browser.add_cookie(cookie)
+
 browser.refresh()
 time.sleep(1)
-# ir para mensagens
 browser.get("https://www.tiktok.com/messages?lang=pt-BR")
 time.sleep(10)
-# clicar no primeiro usuario
+
 browser.find_element(By.XPATH, '//*[@id="more-acton-icon-0"]/div/div[1]/div').click()
 time.sleep(2)
-# clicar na caixa de texto
+
 browser.find_element(By.CLASS_NAME, "DraftEditor-root").click()
 time.sleep(1)
 
-# enviar
-palavras = ["desenrolado", "orea seca"]
-for x in random.choice(palavras):
-    x = str(x)
-    x = x.replace(" ", "space")
-    keyboard.press(x)
+PALAVRAS = ["desenrolado", "orea seca", "lula", "sossegado", "feijao com farinha", "moleculas aahh"]
+mensagem = random.choice(PALAVRAS)
+
+for char in mensagem:
+    key = "space" if char == " " else char
+    keyboard.press(key)
     time.sleep(0.2)
+
 time.sleep(0.5)
 keyboard.press("enter")
-with open("t.txt", "w", encoding="utf-8") as file:
-     file.write(str(today.day))
 
-# ntf = Notification(app_id="tiktok sequencia", title="Sequencia enviada")
-# ntf.show()
+with open("t.txt", "w", encoding="utf-8") as file:
+    file.write(str(today.day))
 
 time.sleep(2)
 browser.quit()
