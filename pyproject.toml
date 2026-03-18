@@ -1,11 +1,11 @@
 [project]
 name = "tiktok-sequencia"
 version = "0.1.0"
-description = "Add your description here"
+description = "A script that lets you set the TikTok's chat fire ON using Python code"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "keyboard>=0.13.5",
-    "selenium>=4.41.0",
-    "winotify>=1.1.0",
+    "cloakbrowser>=0.3.18",
+    "notify-py>=0.3.43",
+    "pynput>=1.8.1",
 ]
