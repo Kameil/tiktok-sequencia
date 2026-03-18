@@ -1,0 +1,5 @@
+.venv
+venv
+zz
+__pycache__
+cookies.pkl
