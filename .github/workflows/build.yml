@@ -1,5 +1,4 @@
 name: Build Nuitka
-
 on:
   push:
     branches: [main, dev]
@@ -11,16 +10,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        uses: astral-sh/setup-uv@v5 
+
       - name: Install dependencies
         run: uv sync --frozen
+
+      - name: Cache Nuitka build
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Nuitka 
+          key: nuitka-linux-${{ hashFiles('**/*.py') }} # cache
+          restore-keys: |
+            nuitka-linux-
+
       - name: Build Linux onefile
         run: uv run --with-editable . --group build python -m nuitka --standalone --onefile main.py
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
@@ -31,16 +43,29 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Install uv
-        run: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+        uses: astral-sh/setup-uv@v5
+
       - name: Install dependencies
         run: uv sync --frozen
+
+      - name: Cache Nuitka build
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\Nuitka\Nuitka  # cache
+          key: nuitka-windows-${{ hashFiles('**/*.py') }}
+          restore-keys: |
+            nuitka-windows-
+
       - name: Build Windows onefile
         run: uv run --with-editable . --group build python -m nuitka --onefile --assume-yes-for-downloads --output-dir=build --script-name=main.py
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
