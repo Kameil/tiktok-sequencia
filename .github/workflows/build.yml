@@ -24,8 +24,8 @@ jobs:
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
-          name: seu_script-linux
-          path: seu_script.bin
+          name: tiktok-sequencia-linux
+          path: main.bin
 
   build-windows:
     runs-on: windows-latest
@@ -40,12 +40,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
       - name: Build Windows onefile
-        uses: Nuitka/Nuitka-Action@main
-        with:
-          script-name: main.py
-          onefile: true
+        run: python -m nuitka --onefile --assume-yes-for-downloads --output-dir=build --script-name=main.py
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: tiktok-sequencia-windows
-          path: tiktok_sequencia.exe
+          path: build/main.exe
