@@ -4,9 +4,9 @@ A Python tool that automatically maintains your TikTok conversation streaks by s
 
 ## Requirements
 
-- Python 3.x
-- Google Chrome (handled by [CloackBrowser](https://cloakbrowser.dev/))
-- [uv](https://github.com/astral-sh/uv) (package manager)
+- Python 3.x.
+- Google Chrome (handled by [CloackBrowser](https://cloakbrowser.dev/)).
+- [uv](https://github.com/astral-sh/uv) (package manager).
 
 ## Installation
 
