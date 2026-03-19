@@ -39,8 +39,8 @@ jobs:
       - name: Cache Nuitka compilation files
         uses: actions/cache@v4
         with:
-          path: ~/.cache/Nuitka
-          key: nuitka-linux-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+          path: .nuitka-cache
+          key: nuitka-linux-${{ hashFiles('uv.lock', 'pyproject.toml', 'main.py') }}
           restore-keys: |
             nuitka-linux-
 
@@ -53,6 +53,7 @@ jobs:
               --output-dir=dist \
               --output-filename=tiktok-sequencia \
               --assume-yes-for-downloads \
+              --jobs-path=.nuitka-cache \
               main.py
 
       - name: Verify and inspect executable
@@ -103,8 +104,8 @@ jobs:
       - name: Cache Nuitka compilation files
         uses: actions/cache@v4
         with:
-          path: ~\AppData\Local\Nuitka\Nuitka
-          key: nuitka-windows-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+          path: .nuitka-cache
+          key: nuitka-windows-${{ hashFiles('uv.lock', 'pyproject.toml', 'main.py') }}
           restore-keys: |
             nuitka-windows-
 
@@ -119,6 +120,7 @@ jobs:
               --output-filename=tiktok-sequencia `
               --assume-yes-for-downloads `
               --windows-disable-console `
+              --jobs-path=.nuitka-cache `
               main.py
 
       - name: Verify and inspect executable

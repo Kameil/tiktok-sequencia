@@ -3,3 +3,4 @@ venv
 zz
 __pycache__
 cookies.pkl
+.nuitka-cache/
