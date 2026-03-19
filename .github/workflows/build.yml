@@ -6,11 +6,13 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-linux:
     name: Build Linux
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,6 +24,14 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-linux-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-linux-
 
       - name: Install project dependencies
         run: uv sync --frozen --no-install-project
@@ -45,29 +55,28 @@ jobs:
               --assume-yes-for-downloads \
               main.py
 
+      - name: Verify and inspect executable
+        run: |
+          if [ ! -f "dist/tiktok-sequencia" ]; then
+            echo "::error::Executable not found after build"
+            ls -la dist/ || true
+            exit 1
+          fi
+          chmod +x dist/tiktok-sequencia
+          du -h dist/tiktok-sequencia
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tiktok-sequencia-linux
+          name: tiktok-sequencia-linux${{ github.ref_name == 'dev' && '-dev' || '' }}
           path: dist/tiktok-sequencia
           if-no-files-found: error
           compression-level: 6
           retention-days: 14
 
-      - name: Show executable size (debug)
-        run: |
-          if [ -f "dist/tiktok-sequencia" ]; then
-            du -h "dist/tiktok-sequencia"
-          else
-            echo "Executable not found"
-            ls -la dist/ || true
-            exit 1
-          fi
-
   build-windows:
     name: Build Windows
     runs-on: windows-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -79,6 +88,14 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\uv\cache
+          key: uv-windows-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-windows-
 
       - name: Install project dependencies
         run: uv sync --frozen --no-install-project
@@ -104,22 +121,23 @@ jobs:
               --windows-disable-console `
               main.py
 
+      - name: Verify and inspect executable
+        shell: pwsh
+        run: |
+          $exe = "dist\tiktok-sequencia.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Error "Executable not found after build"
+            Get-ChildItem dist\ -ErrorAction SilentlyContinue
+            exit 1
+          }
+          $size = (Get-Item $exe).Length / 1MB
+          Write-Output ("{0:N2} MB" -f $size)
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tiktok-sequencia-windows
+          name: tiktok-sequencia-windows${{ github.ref_name == 'dev' && '-dev' || '' }}
           path: dist/tiktok-sequencia.exe
           if-no-files-found: error
           compression-level: 6
-          retention-days: 14
-
-      - name: Show executable size (debug)
-        shell: pwsh
-        run: |
-          if (Test-Path "dist/tiktok-sequencia.exe") {
-            Get-Item "dist/tiktok-sequencia.exe" | Select-Object Length | ForEach-Object { "{0:N2} MB" -f ($_.Length / 1MB) }
-          } else {
-            Write-Output "Executable not found"
-            Get-ChildItem dist/ -ErrorAction SilentlyContinue
-            exit 1
-          }
+          retention-days: 30
