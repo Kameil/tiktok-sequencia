@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import pickle
 import random
@@ -37,8 +38,12 @@ today = datetime.now()
 if T_FILE.exists():
     if T_FILE.read_text(encoding="utf-8") == str(today.day):
         print("Already sent today.")
+        ntf_reopen = Notify()
+        ntf_reopen.title = "Already sent today"
+        ntf_reopen.message = "Messages already sent today. Reopen the app tomorrow."
+        ntf_reopen.send()
         time.sleep(5)
-        exit()
+        sys.exit(0)
 
 # Initialize browser
 browser = launch(headless=False, args=["--ozone-platform=x11"])
@@ -88,8 +93,12 @@ if not COOKIES_FILE.exists():
         listener.stop()
 
     browser.close()
+    ntf_reopen = Notify()
+    ntf_reopen.title = "Reopen the app"
+    ntf_reopen.message = "Cookies saved! Close and reopen the app to start sending messages."
+    ntf_reopen.send()
     time.sleep(1)
-    exit()
+    sys.exit(0)
 
 # Load cookies and access messages
 cookies = pickle.load(open(COOKIES_FILE, "rb"))
