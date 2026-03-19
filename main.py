@@ -3,29 +3,33 @@ import sys
 import time
 import pickle
 import random
+import platform
 import threading
+import logging
 from datetime import datetime
 from pathlib import Path
 from notifypy import Notify
 from pynput import keyboard as pynput_keyboard
 from cloakbrowser import launch
-import logging
 
 
 def get_data_dir() -> Path:
-    """
-    Returns a persistent directory for storing app data.
-    - Linux: ~/.local/share/tiktok-sequencia/
-    - Windows: %APPDATA%/tiktok-sequencia/
-    """
-    if os.name == "nt":  # Windows
+    if os.name == "nt":
         base = Path(os.environ.get("APPDATA", Path.home()))
-    else:  # Linux/macOS
+    else:
         base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
 
     data_dir = base / "tiktok-sequencia"
     data_dir.mkdir(parents=True, exist_ok=True)
     return data_dir
+
+
+def get_browser_args():
+    if platform.system() == "Windows":
+        return []
+    if os.environ.get("WAYLAND_DISPLAY"):
+        return ["--ozone-platform=wayland"]
+    return ["--ozone-platform=x11"]
 
 
 BASE_DIR = get_data_dir()
@@ -35,16 +39,14 @@ LOG_FILE = BASE_DIR / "app.log"
 
 logging.basicConfig(
     filename=LOG_FILE,
-    filemode="w",  # 'a' para adicionar 'w' para sobrescrever
+    filemode="w",
     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
     level=logging.DEBUG,
 )
 
 logger = logging.getLogger("TikTokSequencia")
-
 logger.info(f"[info] Data directory: {BASE_DIR}")
 
-# Verify if it is already sent
 today = datetime.now()
 if T_FILE.exists():
     if T_FILE.read_text(encoding="utf-8") == str(today.day):
@@ -56,17 +58,13 @@ if T_FILE.exists():
         time.sleep(5)
         sys.exit(0)
 
-# Initialize browser
-browser = launch(headless=False, args=["--ozone-platform=x11"])
+browser = launch(headless=False, args=get_browser_args())
 context = browser.new_context()
 page = context.new_page()
 page.goto("https://tiktok.com/")
 
-# Save cookies if not found
 if not COOKIES_FILE.exists():
-    logger.info(
-        "No account found. Please log in and press Ctrl+S to save your cookies."
-    )
+    logger.info("No account found. Please log in and press Ctrl+S to save your cookies.")
 
     ntf = Notify()
     ntf.title = "Login with your account"
@@ -111,14 +109,11 @@ if not COOKIES_FILE.exists():
     browser.close()
     ntf_reopen = Notify()
     ntf_reopen.title = "Reopen the app"
-    ntf_reopen.message = (
-        "Cookies saved! Close and reopen the app to start sending messages."
-    )
+    ntf_reopen.message = "Cookies saved! Close and reopen the app to start sending messages."
     ntf_reopen.send()
     time.sleep(1)
     sys.exit(0)
 
-# Load cookies and access messages
 cookies = pickle.load(open(COOKIES_FILE, "rb"))
 context.add_cookies(cookies)
 
@@ -128,7 +123,6 @@ page.goto("https://www.tiktok.com/messages?lang=pt-BR")
 
 page.wait_for_selector('[data-e2e="chat-list-item"]')
 
-# Use all messages
 WORDS = [
     "desenrolado",
     "orea seca",
@@ -137,6 +131,7 @@ WORDS = [
     "feijao com farinha",
     "moleculas aahh",
 ]
+
 conversation_items = page.query_selector_all('[data-e2e="chat-list-item"]')
 total = len(conversation_items)
 logger.info(f"{total} conversations found.")
@@ -147,9 +142,7 @@ for i in range(total):
         conversation_items[i].click()
         logger.info(f"[{i + 1}/{total}] Conversation(s) opened.")
 
-        page.wait_for_selector(
-            '[data-e2e="message-input-area"] [contenteditable="true"]'
-        )
+        page.wait_for_selector('[data-e2e="message-input-area"] [contenteditable="true"]')
         boxx = page.locator('[data-e2e="message-input-area"] [contenteditable="true"]')
         boxx.click()
         time.sleep(1)
@@ -166,8 +159,6 @@ for i in range(total):
         logger.error(f"[{i + 1}/{total}] Erro: {e}")
         continue
 
-# Register and close
 T_FILE.write_text(str(today.day), encoding="utf-8")
-
 logger.info("All messages sent.")
 browser.close()
