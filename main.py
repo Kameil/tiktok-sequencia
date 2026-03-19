@@ -1,3 +1,4 @@
+import os
 import time
 import pickle
 import random
@@ -8,10 +9,28 @@ from notifypy import Notify
 from pynput import keyboard as pynput_keyboard
 from cloakbrowser import launch
 
-# Base dir always relative
-BASE_DIR = Path(__file__).parent
+
+def get_data_dir() -> Path:
+    """
+    Returns a persistent directory for storing app data.
+    - Linux: ~/.local/share/tiktok-sequencia/
+    - Windows: %APPDATA%/tiktok-sequencia/
+    """
+    if os.name == "nt":  # Windows
+        base = Path(os.environ.get("APPDATA", Path.home()))
+    else:  # Linux/macOS
+        base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
+
+    data_dir = base / "tiktok-sequencia"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return data_dir
+
+
+BASE_DIR = get_data_dir()
 T_FILE = BASE_DIR / "t.txt"
 COOKIES_FILE = BASE_DIR / "cookies.pkl"
+
+print(f"[info] Data directory: {BASE_DIR}")
 
 # Verify if it is already sent
 today = datetime.now()
@@ -58,7 +77,7 @@ if not COOKIES_FILE.exists():
             if save_event.is_set():
                 cookies = context.cookies()
                 pickle.dump(cookies, open(COOKIES_FILE, "wb"))
-                print("Cookies saved.")
+                print(f"Cookies saved at: {COOKIES_FILE}")
                 ntf2 = Notify()
                 ntf2.title = "Cookies saved"
                 ntf2.message = "Cookies saved successfully!"
