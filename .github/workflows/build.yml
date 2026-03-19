@@ -1,4 +1,5 @@
-name: Build Nuitka
+name: Build Nuitka Executables
+
 on:
   push:
     branches: [main, dev]
@@ -6,68 +7,76 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  build:
+    name: Build ${{ matrix.os_name }}
+    runs-on: ${{ matrix.os }}
 
-      - name: Set up Python
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            os_name: Linux
+            artifact_name: tiktok-sequencia-linux
+            output_file: dist/tiktok-sequencia
+            cache_path: ~/.cache/Nuitka
+
+          - os: windows-latest
+            os_name: Windows
+            artifact_name: tiktok-sequencia-windows
+            output_file: dist/tiktok-sequencia.exe
+            cache_path: ~\AppData\Local\Nuitka\Nuitka
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v3
 
-      - name: Install dependencies
-        run: uv sync --frozen
+      - name: Install project dependencies
+        run: uv sync --frozen --no-install-project
 
-      - name: Cache Nuitka build
+      - name: Cache Nuitka compilation files
         uses: actions/cache@v4
         with:
-          path: ~/.cache/Nuitka
-          key: nuitka-linux-${{ hashFiles('**/*.py') }}
+          path: ${{ matrix.cache_path }}
+          key: nuitka-${{ matrix.os_name }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
           restore-keys: |
-            nuitka-linux-
+            nuitka-${{ matrix.os_name }}-
 
-      - name: Build Linux onefile
-        run: uv run --with-editable . --group build python -m nuitka --standalone --onefile main.py
+      - name: Build executable with Nuitka (onefile)
+        run: |
+          uv run --with-editable . --group build \
+            python -m nuitka \
+              --onefile \
+              --standalone \
+              --output-dir=dist \
+              --output-filename=tiktok-sequencia \
+              --assume-yes-for-downloads \
+              ${{ matrix.os == 'windows-latest' && '--windows-disable-console' || '' }} \
+              main.py
 
-      - name: Upload Linux artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tiktok-sequencia-linux
-          path: main.bin
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.output_file }}
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 14
 
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
-      - name: Install dependencies
-        run: uv sync --frozen
-
-      - name: Cache Nuitka build
-        uses: actions/cache@v4
-        with:
-          path: ~\AppData\Local\Nuitka\Nuitka
-          key: nuitka-windows-${{ hashFiles('**/*.py') }}
-          restore-keys: |
-            nuitka-windows-
-
-      - name: Build Windows onefile
-        run: uv run --with-editable . --group build python -m nuitka --onefile --assume-yes-for-downloads --output-dir=build --script-name=main.py
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: tiktok-sequencia-windows
-          path: build/main.exe
+      - name: Show executable size
+        shell: bash
+        run: |
+          if [ -f "${{ matrix.output_file }}" ]; then
+            du -h "${{ matrix.output_file }}"
+          else
+            echo "File not found: ${{ matrix.output_file }}"
+            exit 1
+          fi
