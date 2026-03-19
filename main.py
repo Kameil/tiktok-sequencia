@@ -9,6 +9,7 @@ from pathlib import Path
 from notifypy import Notify
 from pynput import keyboard as pynput_keyboard
 from cloakbrowser import launch
+import logging
 
 
 def get_data_dir() -> Path:
@@ -30,14 +31,24 @@ def get_data_dir() -> Path:
 BASE_DIR = get_data_dir()
 T_FILE = BASE_DIR / "t.txt"
 COOKIES_FILE = BASE_DIR / "cookies.pkl"
+LOG_FILE = BASE_DIR / "app.log"
 
-print(f"[info] Data directory: {BASE_DIR}")
+logging.basicConfig(
+    filename=LOG_FILE,
+    filemode="w",  # 'a' para adicionar 'w' para sobrescrever
+    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+    level=logging.DEBUG,
+)
+
+logger = logging.getLogger("TikTokSequencia")
+
+logger.info(f"[info] Data directory: {BASE_DIR}")
 
 # Verify if it is already sent
 today = datetime.now()
 if T_FILE.exists():
     if T_FILE.read_text(encoding="utf-8") == str(today.day):
-        print("Already sent today.")
+        logger.info("Already sent today.")
         ntf_reopen = Notify()
         ntf_reopen.title = "Already sent today"
         ntf_reopen.message = "Messages already sent today. Reopen the app tomorrow."
@@ -53,7 +64,9 @@ page.goto("https://tiktok.com/")
 
 # Save cookies if not found
 if not COOKIES_FILE.exists():
-    print("No account found. Please log in and press Ctrl+S to save your cookies.")
+    logger.info(
+        "No account found. Please log in and press Ctrl+S to save your cookies."
+    )
 
     ntf = Notify()
     ntf.title = "Login with your account"
@@ -66,8 +79,11 @@ if not COOKIES_FILE.exists():
 
     def on_press(key):
         pressed_keys.add(key)
-        ctrl_held = {pynput_keyboard.Key.ctrl_l, pynput_keyboard.Key.ctrl_r} & pressed_keys
-        if key == pynput_keyboard.KeyCode.from_char('s') and ctrl_held:
+        ctrl_held = {
+            pynput_keyboard.Key.ctrl_l,
+            pynput_keyboard.Key.ctrl_r,
+        } & pressed_keys
+        if key == pynput_keyboard.KeyCode.from_char("s") and ctrl_held:
             save_event.set()
 
     def on_release(key):
@@ -76,13 +92,13 @@ if not COOKIES_FILE.exists():
             stop_event.set()
             return False
 
-    print("Press Esc to exit or Ctrl+S to save cookies.")
+    logger.info("Press Esc to exit or Ctrl+S to save cookies.")
     with pynput_keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
         while not stop_event.is_set():
             if save_event.is_set():
                 cookies = context.cookies()
                 pickle.dump(cookies, open(COOKIES_FILE, "wb"))
-                print(f"Cookies saved at: {COOKIES_FILE}")
+                logger.info(f"Cookies saved at: {COOKIES_FILE}")
                 ntf2 = Notify()
                 ntf2.title = "Cookies saved"
                 ntf2.message = "Cookies saved successfully!"
@@ -95,7 +111,9 @@ if not COOKIES_FILE.exists():
     browser.close()
     ntf_reopen = Notify()
     ntf_reopen.title = "Reopen the app"
-    ntf_reopen.message = "Cookies saved! Close and reopen the app to start sending messages."
+    ntf_reopen.message = (
+        "Cookies saved! Close and reopen the app to start sending messages."
+    )
     ntf_reopen.send()
     time.sleep(1)
     sys.exit(0)
@@ -111,18 +129,27 @@ page.goto("https://www.tiktok.com/messages?lang=pt-BR")
 page.wait_for_selector('[data-e2e="chat-list-item"]')
 
 # Use all messages
-WORDS = ["desenrolado", "orea seca", "fogo", "sossegado", "feijao com farinha", "moleculas aahh"]
+WORDS = [
+    "desenrolado",
+    "orea seca",
+    "fogo",
+    "sossegado",
+    "feijao com farinha",
+    "moleculas aahh",
+]
 conversation_items = page.query_selector_all('[data-e2e="chat-list-item"]')
 total = len(conversation_items)
-print(f"{total} conversations found.")
+logger.info(f"{total} conversations found.")
 
 for i in range(total):
     try:
         conversation_items = page.query_selector_all('[data-e2e="chat-list-item"]')
         conversation_items[i].click()
-        print(f"[{i+1}/{total}] Conversation(s) opened.")
+        logger.info(f"[{i + 1}/{total}] Conversation(s) opened.")
 
-        page.wait_for_selector('[data-e2e="message-input-area"] [contenteditable="true"]')
+        page.wait_for_selector(
+            '[data-e2e="message-input-area"] [contenteditable="true"]'
+        )
         boxx = page.locator('[data-e2e="message-input-area"] [contenteditable="true"]')
         boxx.click()
         time.sleep(1)
@@ -132,15 +159,15 @@ for i in range(total):
 
         time.sleep(0.5)
         page.keyboard.press("Enter")
-        print(f"[{i+1}/{total}] Sent: '{msg}'")
+        logger.info(f"[{i + 1}/{total}] Sent: '{msg}'")
         time.sleep(2)
 
     except Exception as e:
-        print(f"[{i+1}/{total}] Erro: {e}")
+        logger.error(f"[{i + 1}/{total}] Erro: {e}")
         continue
 
 # Register and close
 T_FILE.write_text(str(today.day), encoding="utf-8")
 
-print("All messages sent.")
+logger.info("All messages sent.")
 browser.close()
