@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
       - name: Build Windows onefile
-        run: python -m nuitka --onefile --assume-yes-for-downloads --output-dir=build --script-name=main.py
+        run: uv run python -m nuitka --onefile --assume-yes-for-downloads --output-dir=build --script-name=main.py
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
