@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.12"
 
 [[package]]
@@ -177,6 +177,12 @@ wheels = [
 ]
 
 [[package]]
+name = "nuitka"
+version = "4.0.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/4b/4923ebb606657c26d53969e1d864c89f2f4a8eca7b6ab45bed66060c9cae/nuitka-4.0.6.tar.gz", hash = "sha256:9c14827058faf27414b6d28f5a27ef709fd6aa9b5f04af20e01b42889ac25b5c", size = 4421620, upload-time = "2026-03-18T14:29:00.275Z" }
+
+[[package]]
 name = "playwright"
 version = "1.58.0"
 source = { registry = "https://pypi.org/simple" }
@@ -334,6 +340,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "cloakbrowser" },
     { name = "notify-py" },
+    { name = "nuitka" },
     { name = "pynput" },
 ]
 
@@ -341,6 +348,7 @@ dependencies = [
 requires-dist = [
     { name = "cloakbrowser", specifier = ">=0.3.18" },
     { name = "notify-py", specifier = ">=0.3.43" },
+    { name = "nuitka", specifier = ">=4.0.6" },
     { name = "pynput", specifier = ">=1.8.1" },
 ]
 
