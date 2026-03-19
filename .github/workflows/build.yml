@@ -7,29 +7,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build ${{ matrix.os_name }}
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            os_name: Linux
-            artifact_name: tiktok-sequencia-linux
-            output_file: dist/tiktok-sequencia
-            cache_path: ~/.cache/Nuitka
-            shell: bash
-            line_continuation: '\'
-
-          - os: windows-latest
-            os_name: Windows
-            artifact_name: tiktok-sequencia-windows
-            output_file: dist/tiktok-sequencia.exe
-            cache_path: ~\AppData\Local\Nuitka\Nuitka
-            shell: pwsh
-            line_continuation: '`'
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -49,40 +29,97 @@ jobs:
       - name: Cache Nuitka compilation files
         uses: actions/cache@v4
         with:
-          path: ${{ matrix.cache_path }}
-          key: nuitka-${{ matrix.os_name }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+          path: ~/.cache/Nuitka
+          key: nuitka-linux-${{ hashFiles('uv.lock', 'pyproject.toml') }}
           restore-keys: |
-            nuitka-${{ matrix.os_name }}-
+            nuitka-linux-
 
       - name: Build executable with Nuitka (onefile)
-        shell: ${{ matrix.shell }}
         run: |
-          uv run --with-editable . --group build ${{ matrix.line_continuation }}
-            python -m nuitka ${{ matrix.line_continuation }}
-              --onefile ${{ matrix.line_continuation }}
-              --standalone ${{ matrix.line_continuation }}
-              --output-dir=dist ${{ matrix.line_continuation }}
-              --output-filename=tiktok-sequencia ${{ matrix.line_continuation }}
-              --assume-yes-for-downloads ${{ matrix.line_continuation }}
-              ${{ matrix.os == 'windows-latest' && '--windows-disable-console' || '' }} ${{ matrix.line_continuation }}
+          uv run --with-editable . --group build \
+            python -m nuitka \
+              --onefile \
+              --standalone \
+              --output-dir=dist \
+              --output-filename=tiktok-sequencia \
+              --assume-yes-for-downloads \
               main.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.output_file }}
+          name: tiktok-sequencia-linux
+          path: dist/tiktok-sequencia
           if-no-files-found: error
           compression-level: 6
           retention-days: 14
 
       - name: Show executable size (debug)
-        shell: bash
         run: |
-          if [ -f "${{ matrix.output_file }}" ]; then
-            du -h "${{ matrix.output_file }}"
+          if [ -f "dist/tiktok-sequencia" ]; then
+            du -h "dist/tiktok-sequencia"
           else
-            echo "Executable not found: ${{ matrix.output_file }}"
+            echo "Executable not found"
             ls -la dist/ || true
             exit 1
           fi
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install project dependencies
+        run: uv sync --frozen --no-install-project
+
+      - name: Cache Nuitka compilation files
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\Nuitka\Nuitka
+          key: nuitka-windows-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+          restore-keys: |
+            nuitka-windows-
+
+      - name: Build executable with Nuitka (onefile)
+        shell: pwsh
+        run: |
+          uv run --with-editable . --group build `
+            python -m nuitka `
+              --onefile `
+              --standalone `
+              --output-dir=dist `
+              --output-filename=tiktok-sequencia `
+              --assume-yes-for-downloads `
+              --windows-disable-console `
+              main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktok-sequencia-windows
+          path: dist/tiktok-sequencia.exe
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 14
+
+      - name: Show executable size (debug)
+        shell: pwsh
+        run: |
+          if (Test-Path "dist/tiktok-sequencia.exe") {
+            Get-Item "dist/tiktok-sequencia.exe" | Select-Object Length | ForEach-Object { "{0:N2} MB" -f ($_.Length / 1MB) }
+          } else {
+            Write-Output "Executable not found"
+            Get-ChildItem dist/ -ErrorAction SilentlyContinue
+            exit 1
+          }
