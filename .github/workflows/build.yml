@@ -45,6 +45,8 @@ jobs:
             nuitka-linux-
 
       - name: Build executable with Nuitka (onefile)
+        env:
+          NUITKA_CACHE_DIR: ${{ github.workspace }}/.nuitka-cache
         run: |
           uv run --with-editable . --group build \
             python -m nuitka \
@@ -53,7 +55,6 @@ jobs:
               --output-dir=dist \
               --output-filename=tiktok-sequencia \
               --assume-yes-for-downloads \
-              --cache-path=.nuitka-cache \
               main.py
 
       - name: Verify and inspect executable
@@ -111,6 +112,8 @@ jobs:
 
       - name: Build executable with Nuitka (onefile)
         shell: pwsh
+        env:
+          NUITKA_CACHE_DIR: ${{ github.workspace }}/.nuitka-cache
         run: |
           uv run --with-editable . --group build `
             python -m nuitka `
@@ -120,7 +123,6 @@ jobs:
               --output-filename=tiktok-sequencia `
               --assume-yes-for-downloads `
               --windows-disable-console `
-              --cache-path=.nuitka-cache `
               main.py
 
       - name: Verify and inspect executable
