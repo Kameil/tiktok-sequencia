@@ -20,12 +20,16 @@ jobs:
             artifact_name: tiktok-sequencia-linux
             output_file: dist/tiktok-sequencia
             cache_path: ~/.cache/Nuitka
+            shell: bash
+            line_continuation: '\'
 
           - os: windows-latest
             os_name: Windows
             artifact_name: tiktok-sequencia-windows
             output_file: dist/tiktok-sequencia.exe
             cache_path: ~\AppData\Local\Nuitka\Nuitka
+            shell: pwsh
+            line_continuation: '`'
 
     steps:
       - name: Checkout repository
@@ -51,15 +55,16 @@ jobs:
             nuitka-${{ matrix.os_name }}-
 
       - name: Build executable with Nuitka (onefile)
+        shell: ${{ matrix.shell }}
         run: |
-          uv run --with-editable . --group build \
-            python -m nuitka \
-              --onefile \
-              --standalone \
-              --output-dir=dist \
-              --output-filename=tiktok-sequencia \
-              --assume-yes-for-downloads \
-              ${{ matrix.os == 'windows-latest' && '--windows-disable-console' || '' }} \
+          uv run --with-editable . --group build ${{ matrix.line_continuation }}
+            python -m nuitka ${{ matrix.line_continuation }}
+              --onefile ${{ matrix.line_continuation }}
+              --standalone ${{ matrix.line_continuation }}
+              --output-dir=dist ${{ matrix.line_continuation }}
+              --output-filename=tiktok-sequencia ${{ matrix.line_continuation }}
+              --assume-yes-for-downloads ${{ matrix.line_continuation }}
+              ${{ matrix.os == 'windows-latest' && '--windows-disable-console' || '' }} ${{ matrix.line_continuation }}
               main.py
 
       - name: Upload artifact
@@ -71,12 +76,13 @@ jobs:
           compression-level: 6
           retention-days: 14
 
-      - name: Show executable size
+      - name: Show executable size (debug)
         shell: bash
         run: |
           if [ -f "${{ matrix.output_file }}" ]; then
             du -h "${{ matrix.output_file }}"
           else
-            echo "File not found: ${{ matrix.output_file }}"
+            echo "Executable not found: ${{ matrix.output_file }}"
+            ls -la dist/ || true
             exit 1
           fi
