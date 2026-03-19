@@ -1,4 +1,4 @@
-name: Build Nuitka
+name: Build Nuitka Executables
 
 on:
   push:
@@ -6,43 +6,142 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-linux:
+    name: Build Linux
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
-      - name: Install dependencies
-        run: uv sync --frozen
-      - name: Build Linux onefile
-        run: uv run --with-editable . --group build python -m nuitka --standalone --onefile main.py
-      - name: Upload Linux artifact
+        uses: astral-sh/setup-uv@v3
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-linux-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-linux-
+
+      - name: Install project dependencies
+        run: uv sync --frozen --no-install-project
+
+      - name: Cache Nuitka compilation files
+        uses: actions/cache@v4
+        with:
+          path: .nuitka-cache
+          key: nuitka-linux-${{ hashFiles('uv.lock', 'pyproject.toml', 'main.py') }}
+          restore-keys: |
+            nuitka-linux-
+
+      - name: Build executable with Nuitka (onefile)
+        env:
+          NUITKA_CACHE_DIR: ${{ github.workspace }}/.nuitka-cache
+        run: |
+          uv run --with-editable . --group build \
+            python -m nuitka \
+              --onefile \
+              --standalone \
+              --output-dir=dist \
+              --output-filename=tiktok-sequencia \
+              --assume-yes-for-downloads \
+              main.py
+
+      - name: Verify and inspect executable
+        run: |
+          if [ ! -f "dist/tiktok-sequencia" ]; then
+            echo "::error::Executable not found after build"
+            ls -la dist/ || true
+            exit 1
+          fi
+          chmod +x dist/tiktok-sequencia
+          du -h dist/tiktok-sequencia
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tiktok-sequencia-linux
-          path: main.bin
+          name: tiktok-sequencia-linux${{ github.ref_name == 'dev' && '-dev' || '' }}
+          path: dist/tiktok-sequencia
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 14
 
   build-windows:
+    name: Build Windows
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Install uv
-        run: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-      - name: Install dependencies
-        run: uv sync --frozen
-      - name: Build Windows onefile
-        run: uv run --with-editable . --group build python -m nuitka --onefile --assume-yes-for-downloads --output-dir=build --script-name=main.py
-      - name: Upload Windows artifact
+        uses: astral-sh/setup-uv@v3
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\uv\cache
+          key: uv-windows-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-windows-
+
+      - name: Install project dependencies
+        run: uv sync --frozen --no-install-project
+
+      - name: Cache Nuitka compilation files
+        uses: actions/cache@v4
+        with:
+          path: .nuitka-cache
+          key: nuitka-windows-${{ hashFiles('uv.lock', 'pyproject.toml', 'main.py') }}
+          restore-keys: |
+            nuitka-windows-
+
+      - name: Build executable with Nuitka (onefile)
+        shell: pwsh
+        env:
+          NUITKA_CACHE_DIR: ${{ github.workspace }}/.nuitka-cache
+        run: |
+          uv run --with-editable . --group build `
+            python -m nuitka `
+              --onefile `
+              --standalone `
+              --output-dir=dist `
+              --output-filename=tiktok-sequencia `
+              --assume-yes-for-downloads `
+              --windows-disable-console `
+              main.py
+
+      - name: Verify and inspect executable
+        shell: pwsh
+        run: |
+          $exe = "dist\tiktok-sequencia.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Error "Executable not found after build"
+            Get-ChildItem dist\ -ErrorAction SilentlyContinue
+            exit 1
+          }
+          $size = (Get-Item $exe).Length / 1MB
+          Write-Output ("{0:N2} MB" -f $size)
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tiktok-sequencia-windows
-          path: build/main.exe
+          name: tiktok-sequencia-windows${{ github.ref_name == 'dev' && '-dev' || '' }}
+          path: dist/tiktok-sequencia.exe
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30
