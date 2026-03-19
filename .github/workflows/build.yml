@@ -1,0 +1,48 @@
+name: Build Nuitka
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Build Linux onefile
+        run: uv run --with-editable . --group build python -m nuitka --standalone --onefile main.py
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktok-sequencia-linux
+          path: main.bin
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Build Windows onefile
+        run: uv run --with-editable . --group build python -m nuitka --onefile --assume-yes-for-downloads --output-dir=build --script-name=main.py
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktok-sequencia-windows
+          path: build/main.exe
