@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
       - name: Build Linux onefile
-        run: uv run python -m nuitka --standalone --onefile main.py
+        run: uv run --with-editable . --group build python -m nuitka --standalone --onefile main.py
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
       - name: Build Windows onefile
-        run: uv run python -m nuitka --onefile --assume-yes-for-downloads --output-dir=build --script-name=main.py
+        run: uv run --with-editable . --group build python -m nuitka --onefile --assume-yes-for-downloads --output-dir=build --script-name=main.py
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
