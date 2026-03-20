@@ -18,7 +18,7 @@ def get_data_dir() -> Path:
     else:
         base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
 
-    data_dir = base / "tiktok-sequencia"
+    data_dir = base / "tiktok-ttsk"
     data_dir.mkdir(parents=True, exist_ok=True)
     return data_dir
 
@@ -58,7 +58,7 @@ handler = logging.handlers.RotatingFileHandler(
 )
 handler.setFormatter(logging.Formatter("%(asctime)s | %(name)s | %(levelname)s | %(message)s"))
 
-logger = logging.getLogger("TikTokSequencia")
+logger = logging.getLogger("TikTokTTSK")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 logger.info(f"[info] Data directory: {BASE_DIR}")
