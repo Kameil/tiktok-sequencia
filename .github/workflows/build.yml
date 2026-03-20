@@ -9,21 +9,24 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-linux:
     name: Build Linux
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
@@ -34,13 +37,13 @@ jobs:
         run: uv sync --frozen --no-install-project
 
       - name: Cache Nuitka compilation files
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             .nuitka-cache
             dist/main.build
             dist/main.onefile-build
-          key: nuitka-linux-${{ hashFiles('uv.lock', 'pyproject.toml', 'main.py') }}
+          key: nuitka-linux-${{ hashFiles('uv.lock', 'pyproject.toml', '**/*.py') }}
           restore-keys: |
             nuitka-linux-
 
@@ -51,27 +54,27 @@ jobs:
           uv run --with-editable . --group build \
             python -m nuitka \
               --onefile \
-              --standalone \
               --output-dir=dist \
-              --output-filename=tiktok-sequencia \
+              --output-filename=tiktok-ttsk \
               --assume-yes-for-downloads \
+              --static-libpython=yes \
               main.py
 
       - name: Verify and inspect executable
         run: |
-          if [ ! -f "dist/tiktok-sequencia" ]; then
+          if [ ! -f "dist/tiktok-ttsk" ]; then
             echo "::error::Executable not found after build"
             ls -la dist/ || true
             exit 1
           fi
-          chmod +x dist/tiktok-sequencia
-          du -h dist/tiktok-sequencia
+          chmod +x dist/tiktok-ttsk
+          du -h dist/tiktok-ttsk
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: tiktok-sequencia-linux${{ github.ref_name == 'dev' && '-dev' || '' }}
-          path: dist/tiktok-sequencia
+          name: tiktok-ttsk-linux${{ github.ref_name == 'dev' && '-dev' || '' }}
+          path: dist/tiktok-ttsk
           if-no-files-found: error
           compression-level: 6
           retention-days: 14
@@ -81,15 +84,15 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
@@ -97,13 +100,13 @@ jobs:
         run: uv sync --frozen --no-install-project
 
       - name: Cache Nuitka compilation files
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             .nuitka-cache
             dist/main.build
             dist/main.onefile-build
-          key: nuitka-windows-${{ hashFiles('uv.lock', 'pyproject.toml', 'main.py') }}
+          key: nuitka-windows-${{ hashFiles('uv.lock', 'pyproject.toml', '**/*.py') }}
           restore-keys: |
             nuitka-windows-
 
@@ -115,17 +118,17 @@ jobs:
           uv run --with-editable . --group build `
             python -m nuitka `
               --onefile `
-              --standalone `
               --output-dir=dist `
-              --output-filename=tiktok-sequencia `
+              --output-filename=tiktok-ttsk `
               --assume-yes-for-downloads `
               --windows-console-mode=disable `
+              --include-windows-runtime-dlls=yes `
               main.py
 
       - name: Verify and inspect executable
         shell: pwsh
         run: |
-          $exe = "dist\tiktok-sequencia.exe"
+          $exe = "dist/tiktok-ttsk.exe"
           if (-not (Test-Path $exe)) {
             Write-Error "Executable not found after build"
             Get-ChildItem dist\ -ErrorAction SilentlyContinue
@@ -135,10 +138,10 @@ jobs:
           Write-Output ("{0:N2} MB" -f $size)
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: tiktok-sequencia-windows${{ github.ref_name == 'dev' && '-dev' || '' }}
-          path: dist/tiktok-sequencia.exe
+          name: tiktok-ttsk-windows${{ github.ref_name == 'dev' && '-dev' || '' }}
+          path: dist/tiktok-ttsk.exe
           if-no-files-found: error
           compression-level: 6
           retention-days: 30
