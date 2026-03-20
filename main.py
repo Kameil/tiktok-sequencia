@@ -35,11 +35,16 @@ def wait_for_login(page):
     while True:
         try:
             url = page.url
-            if "tiktok.com" in url and "/login" not in url and url != "https://www.tiktok.com/" and url != "https://tiktok.com/":
-                logger.info(f"Login detected at: {url}")
+            logger.debug(f"Current URL: {url}")
+            url_ok = "/login" not in url and "tiktok.com" in url and url != "https://www.tiktok.com/"
+            dom_ok = page.query_selector('[data-e2e="recommend-list-item-container"]') is not None \
+                  or page.query_selector('[data-e2e="browse-video"]') is not None \
+                  or page.query_selector('[data-e2e="chat-list-item"]') is not None
+            if url_ok or dom_ok:
+                logger.info(f"Login detected. URL: {url}")
                 return
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Login check error: {e}")
         time.sleep(1)
 
 
