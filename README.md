@@ -5,10 +5,16 @@
 ## Requirements
 
 * Python 3.x
-* Google Chrome (handled by [CloackBrowser](https://cloakbrowser.dev/))
+* Google Chrome (handled by [CloakBrowser](https://cloakbrowser.dev/))
 * [uv](https://github.com/astral-sh/uv) (Python package manager)
 
 ## Installation
+
+### Option 1: Pre-built Binary (recommended)
+
+No Python or extra dependencies required. Download the latest release for your platform from the [releases page](https://github.com/Kameil/tiktok-ttsk/releases/latest) and run it directly.
+
+### Option 2: From Source
 
 ```bash
 git clone https://github.com/Kameil/tiktok-ttsk.git
@@ -18,16 +24,15 @@ uv sync
 
 ## Usage
 
+### Binary
+
+Run the downloaded executable directly.
+
+### From Source
+
 ```bash
 uv run python main.py
 ```
-
-On the first run, a browser window will open and prompt you to log in to your TikTok account.
-
-After logging in, it will automatically save the cookies and you may need to rerun the program for it to load your session cookies.
-Future runs will automatically reuse the saved session.
-
-The tool runs **once per day**. If it has already been executed on the same day, it will exit without sending messages.
 
 ## How It Works
 
@@ -36,5 +41,9 @@ The tool runs **once per day**. If it has already been executed on the same day,
 3. Sends a random message to each active conversation
 4. Stores today's date to avoid running multiple times per day
 
-> [!WARNING]
-> For educational and research purposes only. Automating interactions may violate TikTok's Terms of Service and can result in account suspension or a permanent ban. Use at your own risk.
+On the **first run**, a browser window will open prompting you to log in to your TikTok account. After logging in, your session cookies are saved automatically — you may need to rerun the program once for the session to load properly. All subsequent runs will reuse the saved session without any manual intervention.
+
+The tool runs **once per day**. If already executed on the current day, it will exit immediately without sending any messages.
+
+> [!NOTE]
+> Automating interactions may violate TikTok's Terms of Service and can result in account suspension or a permanent ban. Use at your own risk.
