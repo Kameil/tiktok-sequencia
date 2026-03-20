@@ -4,12 +4,10 @@ import time
 import pickle
 import random
 import platform
-import threading
 import logging
 from datetime import datetime
 from pathlib import Path
 from notifypy import Notify
-from pynput import keyboard as pynput_keyboard
 from cloakbrowser import launch
 
 
@@ -30,6 +28,19 @@ def get_browser_args():
     if os.environ.get("WAYLAND_DISPLAY"):
         return ["--ozone-platform=wayland"]
     return ["--ozone-platform=x11"]
+
+
+def wait_for_login(page):
+    logger.info("Waiting for user to log in...")
+    while True:
+        try:
+            url = page.url
+            if "tiktok.com" in url and "/login" not in url and url != "https://www.tiktok.com/" and url != "https://tiktok.com/":
+                logger.info(f"Login detected at: {url}")
+                return
+        except Exception:
+            pass
+        time.sleep(1)
 
 
 BASE_DIR = get_data_dir()
@@ -61,56 +72,29 @@ if T_FILE.exists():
 browser = launch(headless=False, args=get_browser_args())
 context = browser.new_context()
 page = context.new_page()
-page.goto("https://tiktok.com/")
+page.goto("https://www.tiktok.com/login")
 
 if not COOKIES_FILE.exists():
-    logger.info("No account found. Please log in and press Ctrl+S to save your cookies.")
+    logger.info("No account found. Waiting for login...")
 
     ntf = Notify()
     ntf.title = "Login with your account"
-    ntf.message = "No account found. Please log in and save your cookies."
+    ntf.message = "Log in on the browser. The app will continue automatically."
     ntf.send()
 
-    pressed_keys = set()
-    save_event = threading.Event()
-    stop_event = threading.Event()
+    wait_for_login(page)
 
-    def on_press(key):
-        pressed_keys.add(key)
-        ctrl_held = {
-            pynput_keyboard.Key.ctrl_l,
-            pynput_keyboard.Key.ctrl_r,
-        } & pressed_keys
-        if key == pynput_keyboard.KeyCode.from_char("s") and ctrl_held:
-            save_event.set()
+    time.sleep(2)
+    cookies = context.cookies()
+    pickle.dump(cookies, open(COOKIES_FILE, "wb"))
+    logger.info(f"Cookies saved at: {COOKIES_FILE}")
 
-    def on_release(key):
-        pressed_keys.discard(key)
-        if key == pynput_keyboard.Key.esc:
-            stop_event.set()
-            return False
-
-    logger.info("Press Esc to exit or Ctrl+S to save cookies.")
-    with pynput_keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-        while not stop_event.is_set():
-            if save_event.is_set():
-                cookies = context.cookies()
-                pickle.dump(cookies, open(COOKIES_FILE, "wb"))
-                logger.info(f"Cookies saved at: {COOKIES_FILE}")
-                ntf2 = Notify()
-                ntf2.title = "Cookies saved"
-                ntf2.message = "Cookies saved successfully!"
-                ntf2.send()
-                save_event.clear()
-                stop_event.set()
-            time.sleep(0.1)
-        listener.stop()
+    ntf2 = Notify()
+    ntf2.title = "Login successful"
+    ntf2.message = "Cookies saved! Reopen the app to start sending messages."
+    ntf2.send()
 
     browser.close()
-    ntf_reopen = Notify()
-    ntf_reopen.title = "Reopen the app"
-    ntf_reopen.message = "Cookies saved! Close and reopen the app to start sending messages."
-    ntf_reopen.send()
     time.sleep(1)
     sys.exit(0)
 
