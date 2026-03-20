@@ -5,6 +5,7 @@ import pickle
 import random
 import platform
 import logging
+import logging.handlers
 from datetime import datetime
 from pathlib import Path
 from notifypy import Notify
@@ -35,7 +36,6 @@ def wait_for_login(page):
     while True:
         try:
             url = page.url
-            logger.debug(f"Current URL: {url}")
             url_ok = "/login" not in url and "tiktok.com" in url and url != "https://www.tiktok.com/"
             dom_ok = page.query_selector('[data-e2e="recommend-list-item-container"]') is not None \
                   or page.query_selector('[data-e2e="browse-video"]') is not None \
@@ -43,8 +43,8 @@ def wait_for_login(page):
             if url_ok or dom_ok:
                 logger.info(f"Login detected. URL: {url}")
                 return
-        except Exception as e:
-            logger.debug(f"Login check error: {e}")
+        except Exception:
+            pass
         time.sleep(1)
 
 
@@ -53,14 +53,14 @@ T_FILE = BASE_DIR / "t.txt"
 COOKIES_FILE = BASE_DIR / "cookies.pkl"
 LOG_FILE = BASE_DIR / "app.log"
 
-logging.basicConfig(
-    filename=LOG_FILE,
-    filemode="w",
-    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-    level=logging.DEBUG,
+handler = logging.handlers.RotatingFileHandler(
+    LOG_FILE, maxBytes=1_000_000, backupCount=5, encoding="utf-8"
 )
+handler.setFormatter(logging.Formatter("%(asctime)s | %(name)s | %(levelname)s | %(message)s"))
 
 logger = logging.getLogger("TikTokSequencia")
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
 logger.info(f"[info] Data directory: {BASE_DIR}")
 
 today = datetime.now()
