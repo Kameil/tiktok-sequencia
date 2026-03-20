@@ -24,14 +24,11 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
-
-      - name: Cache uv dependencies
-        uses: actions/cache@v4
         with:
-          path: ~/.cache/uv
-          key: uv-linux-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-linux-
+          enable-cache: true
+
+      - name: Install ccache
+        run: sudo apt-get install -y ccache
 
       - name: Install project dependencies
         run: uv sync --frozen --no-install-project
@@ -39,7 +36,10 @@ jobs:
       - name: Cache Nuitka compilation files
         uses: actions/cache@v4
         with:
-          path: .nuitka-cache
+          path: |
+            .nuitka-cache
+            dist/main.build
+            dist/main.onefile-build
           key: nuitka-linux-${{ hashFiles('uv.lock', 'pyproject.toml', 'main.py') }}
           restore-keys: |
             nuitka-linux-
@@ -90,14 +90,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
-
-      - name: Cache uv dependencies
-        uses: actions/cache@v4
         with:
-          path: ~\AppData\Local\uv\cache
-          key: uv-windows-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-windows-
+          enable-cache: true
 
       - name: Install project dependencies
         run: uv sync --frozen --no-install-project
@@ -105,7 +99,10 @@ jobs:
       - name: Cache Nuitka compilation files
         uses: actions/cache@v4
         with:
-          path: .nuitka-cache
+          path: |
+            .nuitka-cache
+            dist/main.build
+            dist/main.onefile-build
           key: nuitka-windows-${{ hashFiles('uv.lock', 'pyproject.toml', 'main.py') }}
           restore-keys: |
             nuitka-windows-
@@ -122,7 +119,7 @@ jobs:
               --output-dir=dist `
               --output-filename=tiktok-sequencia `
               --assume-yes-for-downloads `
-              --windows-disable-console `
+              --windows-console-mode=disable `
               main.py
 
       - name: Verify and inspect executable
