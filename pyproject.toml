@@ -8,6 +8,9 @@ dependencies = [
     "cloakbrowser>=0.3.18",
     "notify-py>=0.3.43",
 ]
+# to stop crashing on build cuz repo is on flat org
+[tool.setuptools]
+py-modules = ['main']
 
 [dependency-groups]
 build = ["nuitka[onefile]>=4.0.6"]
