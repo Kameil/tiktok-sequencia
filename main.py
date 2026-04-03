@@ -10,6 +10,9 @@ from datetime import datetime
 from pathlib import Path
 from notifypy import Notify
 from cloakbrowser import launch
+from args import load_args
+
+args = load_args()
 
 
 def get_data_dir() -> Path:
@@ -36,10 +39,17 @@ def wait_for_login(page):
     while True:
         try:
             url = page.url
-            url_ok = "/login" not in url and "tiktok.com" in url and url != "https://www.tiktok.com/"
-            dom_ok = page.query_selector('[data-e2e="recommend-list-item-container"]') is not None \
-                  or page.query_selector('[data-e2e="browse-video"]') is not None \
-                  or page.query_selector('[data-e2e="chat-list-item"]') is not None
+            url_ok = (
+                "/login" not in url
+                and "tiktok.com" in url
+                and url != "https://www.tiktok.com/"
+            )
+            dom_ok = (
+                page.query_selector('[data-e2e="recommend-list-item-container"]')
+                is not None
+                or page.query_selector('[data-e2e="browse-video"]') is not None
+                or page.query_selector('[data-e2e="chat-list-item"]') is not None
+            )
             if url_ok or dom_ok:
                 logger.info(f"Login detected. URL: {url}")
                 return
@@ -56,7 +66,9 @@ LOG_FILE = BASE_DIR / "app.log"
 handler = logging.handlers.RotatingFileHandler(
     LOG_FILE, maxBytes=1_000_000, backupCount=5, encoding="utf-8"
 )
-handler.setFormatter(logging.Formatter("%(asctime)s | %(name)s | %(levelname)s | %(message)s"))
+handler.setFormatter(
+    logging.Formatter("%(asctime)s | %(name)s | %(levelname)s | %(message)s")
+)
 
 logger = logging.getLogger("TikTokTTSK")
 logger.setLevel(logging.DEBUG)
@@ -74,7 +86,7 @@ if T_FILE.exists():
         time.sleep(5)
         sys.exit(0)
 
-browser = launch(headless=False, args=get_browser_args())
+browser = launch(headless=args.headless, args=get_browser_args())
 context = browser.new_context()
 page = context.new_page()
 page.goto("https://www.tiktok.com/login")
@@ -131,7 +143,9 @@ for i in range(total):
         conversation_items[i].click()
         logger.info(f"[{i + 1}/{total}] Conversation(s) opened.")
 
-        page.wait_for_selector('[data-e2e="message-input-area"] [contenteditable="true"]')
+        page.wait_for_selector(
+            '[data-e2e="message-input-area"] [contenteditable="true"]'
+        )
         boxx = page.locator('[data-e2e="message-input-area"] [contenteditable="true"]')
         boxx.click()
         time.sleep(1)
