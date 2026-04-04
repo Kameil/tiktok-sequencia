@@ -1,4 +1,4 @@
-# TikTok TTSK ![Python](https://img.shields.io/badge/Python-3.x-blue) ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
+# TikTok TTSK ![Python](https://img.shields.io/badge/Python-3.x-yellow) ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-red.svg) [![AUR](https://img.shields.io/badge/AUR-tiktok--ttsk-1793d1?logo=arch-linux)](https://aur.archlinux.org/packages/tiktok-ttsk) [![COPR](https://img.shields.io/badge/COPR-luqenov%2Ftiktok--ttsk-51a2da?logo=fedora)](https://copr.fedorainfracloud.org/coprs/luqenov/tiktok-ttsk/)
 
 **TTSK (TikTok Streak Keeper)** is a Python tool that automatically maintains your TikTok conversation streaks by sending a message to your active chats once per day.
 
@@ -10,11 +10,25 @@
 
 ## Installation
 
-### Option 1: Pre-built Binary (recommended)
+### Option 1: Pre-built Binary
 
 No Python or extra dependencies required. Download the latest release for your platform from the [releases page](https://github.com/Kameil/tiktok-ttsk/releases/latest) and run it directly.
 
-### Option 2: From Source
+### Option 2: Arch Linux
+
+```bash
+yay -S tiktok-ttsk
+paru -S tiktok-ttsk
+```
+
+### Option 3: Fedora
+
+```bash
+dnf copr enable luqenov/tiktok-ttsk
+dnf install tiktok-ttsk
+```
+
+### Option 4: From Source
 
 ```bash
 git clone https://github.com/Kameil/tiktok-ttsk.git
